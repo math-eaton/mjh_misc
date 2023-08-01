@@ -1,1 +1,1 @@
-Get-ChildItem *.pdf -Recurse | Move-Item -Destination .
+# Get-ChildItem *.pdf -Recurse | Move-Item -Destination .
