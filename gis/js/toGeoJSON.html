@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KML to GeoJSON Conversion</title>
+    <!-- Include togeojson library -->
+    <script src="Users/matthewheaton/node_modules/@tmcw/togeojson/dist/togeojson.umd.js"></script>
+</head>
+<body>
+    <script>
+        // Function to convert KML to GeoJSON
+        function kmlToGeoJSON(kmlUrl, callback) {
+            fetch(kmlUrl)
+                .then(response => response.text())
+                .then(kml => {
+                    const geoJSON = toGeoJSON.kml(new DOMParser().parseFromString(kml, 'text/xml'));
+                    callback(geoJSON);
+                });
+        }
+
+        // Example usage:
+        const kmlFiles = [
+            '/Users/matthewheaton/Downloads/fm_kml_ex/fmq_1.kml',
+        ];
+
+        // Loop through each KML file and convert to GeoJSON
+        kmlFiles.forEach(kmlFile => {
+            kmlToGeoJSON(kmlFile, geoJSON => {
+                // geoJSON variable now contains the converted GeoJSON data
+                console.log(geoJSON);
+                // Do something with the GeoJSON data here
+            });
+        });
+    </script>
+</body>
+</html>

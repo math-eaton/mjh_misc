@@ -6,9 +6,9 @@ env.workspace = "path/to/your/geodatabase.gdb"  # Replace with your Geodatabase 
 
 # Set the local variables
 joinFeatures = "your_join_features"  # Replace with your join feature class
-join_field = "page_name"  # Field to join
+join_field = "pagename"  # Field to join
 
-# Create a new field 'page_name' in the join feature class
+# Create a new field 'pagename' in the join feature class
 arcpy.AddField_management(joinFeatures, join_field, "TEXT")
 
 # Concatenate 'statename', 'lganame', and 'wardname' fields with an underscore separator
@@ -20,7 +20,7 @@ def remove_non_ascii(text):
     return ''.join(i for i in text if ord(i)<128).replace(' ', '-')
 """
 
-# Apply the function to the 'page_name' field
+# Apply the function to the 'pagename' field
 arcpy.CalculateField_management(joinFeatures, join_field, "remove_non_ascii(!{}!)".format(join_field), "PYTHON3", code_block)
 
 # Get a list of all feature classes
@@ -33,7 +33,7 @@ for targetFeatures in featureclasses:
     # Use the Spatial Join tool to join the two feature classes.
     arcpy.analysis.SpatialJoin(targetFeatures, joinFeatures, outfc)
 
-    # Now, let's iterate through other feature classes and join the 'page_name' field to them
+    # Now, let's iterate through other feature classes and join the 'pagename' field to them
     for fc in featureclasses:
         if fc != targetFeatures:  # Avoid joining the target feature class with itself
             # Add Join Field
