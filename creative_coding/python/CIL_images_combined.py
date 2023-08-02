@@ -66,7 +66,6 @@ def calculate_brightness(image):
             ratio = histogram[index] / pixels
             brightness += ratio * (-scale + index)
 
-        print("Assessing brightness...")
         return 1 if brightness == 255 else brightness / scale
 
     except Exception as e:
@@ -79,11 +78,32 @@ def calculate_contrast(image):
         grayscale_array = np.array(grayscale)
         contrast = grayscale_array.std()
 
-        print("Assessing contrast...")
         return contrast
 
     except Exception as e:
         print(f"An error occurred in calculate_contrast: {str(e)}")
+        return None
+    
+def calculate_entropy(image):
+    try:
+        # Convert the image to grayscale
+        grayscale = image.convert('L')
+        
+        # Calculate the histogram
+        histogram = grayscale.histogram()
+
+        # Normalize the histogram to get probabilities
+        histogram_length = sum(histogram)
+        probability_histogram = [float(h) / histogram_length for h in histogram]
+
+        # Calculate entropy
+        entropy = -sum([p * np.log2(p) for p in probability_histogram if p != 0])
+
+        print("Assessing image qualities...")
+        return entropy
+
+    except Exception as e:
+        print(f"An error occurred in calculate_entropy: {str(e)}")
         return None
 
 
@@ -180,12 +200,19 @@ def download_image(image_id):
             # Crop the image
             image = crop_image(image)
 
-            # Calculate the brightness and contrast
+            # Calculate the brightness, contrast, and entropy
+            # BRIGHTNESS 0-1
             brightness = calculate_brightness(image)
+            # CONTRAST 1-255
             contrast = calculate_contrast(image)
+            # ENTROPY 1-8
+            entropy = calculate_entropy(image)
+
+            # Print the brightness, contrast, and entropy
+            print(f"Brightness: {brightness}, Contrast: {contrast}, Entropy: {entropy}")
 
             # Check the image against your thresholds
-            if brightness < 230 and contrast > 50:
+            if brightness < 0.75 and contrast > 10 and entropy < 7:
                 # Process the image
                 image = process_image(image)
 
@@ -193,19 +220,23 @@ def download_image(image_id):
                 filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
                 image.save(filename, "PNG")
 
-                print("Image reached threshold, proceed")
+                print("Image passed threshold, proceed.")
                 return True
 
     except requests.exceptions.Timeout:
-        print(f"Request timed out for image ID: {image_id}")
+        print(f"Request timed out for image ID: {image_id}. Please check your network connection.")
+
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             print(f"Image not found for ID: {image_id}")
+        elif e.response.status_code == 429:
+            print(f"Rate limit exceeded for image ID: {image_id}. Please wait before sending more requests.")
         else:
             print(f"HTTP error occurred for image ID: {image_id}. Error details: {str(e)}")
+
     except Exception as e:
         print(f"An error occurred for image ID: {image_id}. Error details: {str(e)}")
-    
+
     return False
 
 # alternatively, use a seed for pseudo-random ID shuffle
