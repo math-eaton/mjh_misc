@@ -56,21 +56,36 @@ def crop_image(image, sensitivity=1):
 
 # Assess the qualities of an image before dithering
 def calculate_brightness(image):
-    greyscale_image = image.convert('L')
-    histogram = greyscale_image.histogram()
-    pixels = sum(histogram)
-    brightness = scale = len(histogram)
+    try:
+        grayscale = image.convert('L')
+        histogram = grayscale.histogram()
+        pixels = sum(histogram)
+        brightness = scale = len(histogram)
 
-    for index in range(0, scale):
-        ratio = histogram[index] / pixels
-        brightness += ratio * (-scale + index)
+        for index in range(0, scale):
+            ratio = histogram[index] / pixels
+            brightness += ratio * (-scale + index)
 
-    return 1 if brightness == 255 else brightness / scale
+        print("Assessing brightness...")
+        return 1 if brightness == 255 else brightness / scale
+
+    except Exception as e:
+        print(f"An error occurred in calculate_brightness: {str(e)}")
+        return None
 
 def calculate_contrast(image):
-    greyscale_image = image.convert('L')
-    contrast = np.std(np.array(greyscale_image)) / 128.
-    return contrast
+    try:
+        grayscale = image.convert('L')
+        grayscale_array = np.array(grayscale)
+        contrast = grayscale_array.std()
+
+        print("Assessing contrast...")
+        return contrast
+
+    except Exception as e:
+        print(f"An error occurred in calculate_contrast: {str(e)}")
+        return None
+
 
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
@@ -129,13 +144,14 @@ http.mount("https://", adapter)
 http.mount("http://", adapter)
 
 
-# Function to get a random image from the API
 def download_image(image_id):
     try:
         # Fetch the document data from the API
         response = http.get(f"{api_url}/public_documents/{image_id}", auth=(username, password))
         response.raise_for_status()
         data = response.json()
+
+        image_url = None
 
         # Check the ID type
         if image_id.startswith("CCDB_"):
@@ -144,30 +160,7 @@ def download_image(image_id):
                 # Get the image URL from the API response
                 image_url = data.get(field)
                 if image_url:
-                    # Fetch the image data
-                    response = requests.get(image_url, stream=True, timeout=5)
-                    response.raise_for_status()
-
-                # Load the image data with PIL
-                image = Image.open(BytesIO(response.content))
-
-                # Crop the image
-                image = crop_image(image)
-
-                # Calculate the brightness and contrast
-                brightness = calculate_brightness(image)
-                contrast = calculate_contrast(image)
-                print("Assessing contrast...")
-
-
-                # Check the image against your thresholds
-                if brightness > 50 and contrast > 200:
-                    # Process the image
-                    image = process_image(image)
-
-                    # Save the image
-                    filename = os.path.join(output_folder, f"{image_id}_300x300.png")
-                    image.save(filename, "PNG")
+                    break
 
         elif image_id.startswith("CIL_"):
             # Remove the "CIL_" prefix
@@ -176,6 +169,7 @@ def download_image(image_id):
             # Construct the image URL
             image_url = f"https://cildata.crbs.ucsd.edu/media/thumbnail_display/{id_number}/{id_number}_thumbnailx512.jpg"
 
+        if image_url is not None:
             # Fetch the image data
             response = requests.get(image_url, stream=True, timeout=5)
             response.raise_for_status()
@@ -186,13 +180,21 @@ def download_image(image_id):
             # Crop the image
             image = crop_image(image)
 
-            # Process the image
-            image = process_image(image)
+            # Calculate the brightness and contrast
+            brightness = calculate_brightness(image)
+            contrast = calculate_contrast(image)
 
-            # Save the image
-            filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
-            image.save(filename, "PNG")
+            # Check the image against your thresholds
+            if brightness < 230 and contrast > 50:
+                # Process the image
+                image = process_image(image)
 
+                # Save the image
+                filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
+                image.save(filename, "PNG")
+
+                print("Image reached threshold, proceed")
+                return True
 
     except requests.exceptions.Timeout:
         print(f"Request timed out for image ID: {image_id}")
@@ -203,6 +205,12 @@ def download_image(image_id):
             print(f"HTTP error occurred for image ID: {image_id}. Error details: {str(e)}")
     except Exception as e:
         print(f"An error occurred for image ID: {image_id}. Error details: {str(e)}")
+    
+    return False
+
+# alternatively, use a seed for pseudo-random ID shuffle
+# random.seed(666)
+# random.shuffle(ids)
 
 # Fetch the list of public IDs
 response = requests.get(f"{api_url}/public_ids?from=0&size=50000", auth=(username, password))
@@ -216,17 +224,22 @@ ids = [hit['_id'] for hit in response.json()['hits']['hits']]
 random.seed(time.time())
 random.shuffle(ids)
 
-# alternatively, use a seed for pseudo-random ID shuffle
-# random.seed(666)
-# random.shuffle(ids)
+# Initialize counter for downloaded images
+downloaded_images = 0
 
-# Download the images
-for i in range(min(num_images, len(ids))):
-    download_image(ids[i])
-    print(f"Downloading... ({i+1} of {min(num_images, len(ids))})")
+# Initialize an index for the IDs list
+index = 0
+
+while downloaded_images < num_images and index < len(ids):
+    # Try to download the image at the current index
+    if download_image(ids[index]):
+        # If the download was successful, increment the counter
+        downloaded_images += 1
+        print(f"Downloading... ({downloaded_images} of {min(num_images, len(ids))})")
+    # Always increment the index, whether the download was successful or not
+    index += 1
 
 print("Done.")
-
 # Record the end time
 end_time = time.time()
 
