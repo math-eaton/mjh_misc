@@ -50,7 +50,7 @@ def crop_image(image, sensitivity=0):
 # Function to process an image
 def process_image(image):
     # Resize the image (pre-dither) using nearest neighbor
-    size = (300, 300)  # Set your desired size here
+    size = (400, 400)  # Set your desired size here
     image = image.resize(size, Image.NEAREST)
     print("Resizing...")
 
@@ -132,8 +132,9 @@ def download_image(image_id):
             image = process_image(image)
 
             # Save the image
-            filename = os.path.join(output_folder, f"{image_id}.png")
+            filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
             image.save(filename, "PNG")
+
 
     except requests.exceptions.Timeout:
         print(f"Request timed out for image ID: {image_id}")
@@ -162,4 +163,4 @@ for i in range(min(num_images, len(ids))):
     download_image(ids[i])
     print(f"Downloading... ({i+1} of {min(num_images, len(ids))})")
 
-print("Download and processing complete.")
+print("Done.")
