@@ -152,6 +152,21 @@ def process_image(filename):
             image = Image.open(filename)
             print("Loading " + filename + "...")
 
+            # Convert the image to grayscale
+            grayscale_image = image.convert('L')
+
+            # Convert the grayscale image to a numpy array
+            grayscale_array = np.array(grayscale_image)
+
+            # Find the bounding box of non-black pixels (tolerance: 10)
+            rows = np.any(grayscale_array > 10, axis=1)
+            cols = np.any(grayscale_array > 10, axis=0)
+            rmin, rmax = np.where(rows)[0][[0, -1]]
+            cmin, cmax = np.where(cols)[0][[0, -1]]
+
+            # Crop the image to this bounding box
+            image = image.crop((cmin, rmin, cmax, rmax))
+
             # Resize the image (pre-dither) using nearest neighbor
             size = (300, 300)  # Set your desired size here
             image = image.resize(size, Image.NEAREST)
