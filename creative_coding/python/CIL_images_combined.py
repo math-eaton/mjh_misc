@@ -109,10 +109,24 @@ def calculate_entropy(image):
 
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
-    # Resize the image (pre-dither) using nearest neighbor
-    size = (800, 800)  # Set your desired size here
-    # size = (600, 450)  # Size for video
-    image = image.resize(size, Image.NEAREST)
+    # Resize the image (pre-dither) while maintaining aspect ratio
+    size = (1200, 1200)  # Set your desired size here
+    image.thumbnail(size, Image.NEAREST)
+    
+    # Crop the image to desired aspect ratio (1:1 in this case)
+    width, height = image.size
+    new_size = min(width, height)
+
+    left = (width - new_size)/2
+    top = (height - new_size)/2
+    right = (width + new_size)/2
+    bottom = (height + new_size)/2
+
+    # Calculate and print the aspect ratio
+    aspect_ratio = new_size / new_size  # e.g. square is 1.0
+
+    image = image.crop((left, top, right, bottom))
+    print(f"Cropping to aspect ratio {aspect_ratio}")
 
     # Convert the image to grayscale
     image = image.convert('L')
@@ -141,10 +155,9 @@ def process_image(image):
     right = width * 0.98
     bottom = height * 0.98
     image = image.crop((left, top, right, bottom))
-    print("Cropping...")
 
     # Resize the image (post-dither) using nearest neighbor
-    size = (1200, 1200)  # Set your desired size here
+    size = (1600, 1600)  # Set your desired size here
     # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
     print("Rescaling...")
@@ -199,6 +212,8 @@ def download_image(image_id):
 
             # Crop the image
             image = crop_image(image)
+
+
 
             # Calculate the brightness, contrast, and entropy
             # BRIGHTNESS 0-1
