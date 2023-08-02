@@ -16,7 +16,7 @@ start_time = time.time()
 num_images = 10
 
 # Define the output folder
-output_folder = "/Users/matthewheaton/Documents/CIL_API_output"
+output_folder = "/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/CIL_square_images"
 
 # Base URL for the API
 api_url = "https://cilia.crbs.ucsd.edu/rest"
@@ -54,10 +54,29 @@ def crop_image(image, sensitivity=1):
     # Return the cropped image
     return Image.fromarray(cropped_image)
 
+# Assess the qualities of an image before dithering
+def calculate_brightness(image):
+    greyscale_image = image.convert('L')
+    histogram = greyscale_image.histogram()
+    pixels = sum(histogram)
+    brightness = scale = len(histogram)
+
+    for index in range(0, scale):
+        ratio = histogram[index] / pixels
+        brightness += ratio * (-scale + index)
+
+    return 1 if brightness == 255 else brightness / scale
+
+def calculate_contrast(image):
+    greyscale_image = image.convert('L')
+    contrast = np.std(np.array(greyscale_image)) / 128.
+    return contrast
+
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
     # Resize the image (pre-dither) using nearest neighbor
-    size = (600, 450)  # Set your desired size here
+    size = (800, 800)  # Set your desired size here
+    # size = (600, 450)  # Size for video
     image = image.resize(size, Image.NEAREST)
 
     # Convert the image to grayscale
@@ -90,7 +109,8 @@ def process_image(image):
     print("Cropping...")
 
     # Resize the image (post-dither) using nearest neighbor
-    size = (1200, 900)  # Set your desired size here
+    size = (1200, 1200)  # Set your desired size here
+    # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
     print("Rescaling...")
 
@@ -108,6 +128,7 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
+
 # Function to get a random image from the API
 def download_image(image_id):
     try:
@@ -115,7 +136,7 @@ def download_image(image_id):
         response = http.get(f"{api_url}/public_documents/{image_id}", auth=(username, password))
         response.raise_for_status()
         data = response.json()
-        
+
         # Check the ID type
         if image_id.startswith("CCDB_"):
             # Check each field
@@ -127,18 +148,27 @@ def download_image(image_id):
                     response = requests.get(image_url, stream=True, timeout=5)
                     response.raise_for_status()
 
-                    # Load the image data with PIL
-                    image = Image.open(BytesIO(response.content))
+                # Load the image data with PIL
+                image = Image.open(BytesIO(response.content))
 
-                    # Crop the image
-                    image = crop_image(image)
+                # Crop the image
+                image = crop_image(image)
 
+                # Calculate the brightness and contrast
+                brightness = calculate_brightness(image)
+                contrast = calculate_contrast(image)
+                print("Assessing contrast...")
+
+
+                # Check the image against your thresholds
+                if brightness > 50 and contrast > 200:
                     # Process the image
                     image = process_image(image)
 
                     # Save the image
-                    filename = os.path.join(output_folder, f"{image_id}.png")
+                    filename = os.path.join(output_folder, f"{image_id}_300x300.png")
                     image.save(filename, "PNG")
+
         elif image_id.startswith("CIL_"):
             # Remove the "CIL_" prefix
             id_number = image_id[4:]
@@ -183,12 +213,12 @@ ids = [hit['_id'] for hit in response.json()['hits']['hits']]
 
 # Randomly shuffle the list of IDs
 # with new seed for random based on current time
-# random.seed(time.time())
-# random.shuffle(ids)
-
-# alternatively, use a seed for ID shuffle
-random.seed(666)
+random.seed(time.time())
 random.shuffle(ids)
+
+# alternatively, use a seed for pseudo-random ID shuffle
+# random.seed(666)
+# random.shuffle(ids)
 
 # Download the images
 for i in range(min(num_images, len(ids))):
