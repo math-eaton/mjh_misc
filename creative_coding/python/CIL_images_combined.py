@@ -106,27 +106,29 @@ input_folder = "/Users/matthewheaton/Documents/CIL_API_output"
 
 # Function to resize an image
 def resize_image(filename):
-    try:
-        # Load the image
-        image = Image.open(filename)
-        print("Loading " + filename)
+    # Check if the image has already been processed
+    if "_resized" not in filename:
+        try:
+            # Load the image
+            image = Image.open(filename)
+            print("Loading " + filename)
 
-        # Resize the image
-        image = image.resize(image_size, Image.LANCZOS)
-        print("Resizing...")
+            # Resize the image
+            image = image.resize(image_size, Image.LANCZOS)
+            print("Resizing...")
 
-        # Save the image
-        new_filename = os.path.splitext(filename)[0] + ".png"
-        image.save(new_filename, "PNG")
-        print("Saving...")
+            # Save the image with a new filename
+            new_filename = os.path.splitext(filename)[0] + "_resized.png"
+            image.save(new_filename, "PNG")
+            print("Saving...")
 
-        # If new file is saved successfully, remove the original file
-        if os.path.isfile(new_filename):
-            os.remove(filename)
-            print(f"Removed original file: {filename}")
+            # If new file is saved successfully, remove the original file
+            if os.path.isfile(new_filename):
+                os.remove(filename)
+                print(f"Removed original file: {filename}")
 
-    except Exception as e:
-        print(f"An error occurred for file: {filename}. Error details: {str(e)}")
+        except Exception as e:
+            print(f"An error occurred for file: {filename}. Error details: {str(e)}")
 
 # Resize all images in the input folder
 for filename in os.listdir(input_folder):
@@ -140,42 +142,56 @@ input_folder = "/Users/matthewheaton/Documents/CIL_API_output"
 
 # Function to process an image
 def process_image(filename):
-    # Load the image
-    image = Image.open(filename)
-    print("Loading " + filename + "...")
+    # Define the post-processing image size
+    post_size = (300, 300)  # Set your desired size here
 
-    # Resize the image (pre-dither) using nearest neighbor
-    size = (300, 300)  # Set your desired size here
-    image = image.resize(size, Image.NEAREST)
-    print("Resizing...")
+    # Check if the image has already been processed
+    if f"_{post_size[0]}x{post_size[1]}" not in filename:
+        try:
+            # Load the image
+            image = Image.open(filename)
+            print("Loading " + filename + "...")
 
-    # Convert the image to grayscale
-    image = image.convert('L')
+            # Resize the image (pre-dither) using nearest neighbor
+            size = (300, 300)  # Set your desired size here
+            image = image.resize(size, Image.NEAREST)
+            print("Resizing...")
 
-    # Dither the image
-    image = image.convert('1')
-    print("Dithering...")
+            # Convert the image to grayscale
+            image = image.convert('L')
 
-    # Convert the image back to RGB
-    image = image.convert('RGB')
+            # Dither the image
+            image = image.convert('1')
+            print("Dithering...")
 
-    # Make sure the image has an alpha channel
-    image = image.convert('RGBA')
+            # Convert the image back to RGB
+            image = image.convert('RGB')
 
-    # Convert white (also shades of whites) pixels to transparent
-    data = np.array(image)
-    red, green, blue, alpha = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
-    white_areas = (red > 200) & (green > 200) & (blue > 200)
-    data[white_areas] = [255, 255, 255, 0]
-    image = Image.fromarray(data)
+            # Make sure the image has an alpha channel
+            image = image.convert('RGBA')
 
-    # Resize the image (post-dither) using nearest neighbor
-    size = (300, 300)  # Set your desired size here
-    image = image.resize(size, Image.NEAREST)
+            # Convert white (also shades of whites) pixels to transparent
+            data = np.array(image)
+            red, green, blue, alpha = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
+            white_areas = (red > 200) & (green > 200) & (blue > 200)
+            data[white_areas] = [255, 255, 255, 0]
+            image = Image.fromarray(data)
 
-    # Save the image
-    image.save(filename)
-    print("Saving " + filename)
+            # Resize the image (post-dither) using nearest neighbor
+            image = image.resize(post_size, Image.NEAREST)
+
+            # Save the image with a new filename that includes the resolution
+            new_filename = os.path.splitext(filename)[0] + f"_{post_size[0]}x{post_size[1]}.png"
+            image.save(new_filename)
+            print("Saving " + new_filename)
+
+            # If new file is saved successfully, remove the original file
+            if os.path.isfile(new_filename):
+                os.remove(filename)
+                print(f"Removed original file: {filename}")
+
+        except Exception as e:
+            print(f"An error occurred for file: {filename}. Error details: {str(e)}")
 
 # Get a list of all files in the directory
 files = os.listdir(input_folder)
