@@ -26,6 +26,29 @@ ccdb_fields = [
     "CIL_CCDB.CCDB.Segmentation.Seg_Display_image.URL",
 ]
 
+# Identify and crop any letterbox around the image
+# higher sensitivity considers more grey values +/- 0 to 255 aka pure white/black
+def crop_image(image, sensitivity=0):
+    # Convert the image to a NumPy array
+    image_data = np.array(image)
+
+    if len(image_data.shape) == 3:  # RGB Image
+        # Identify non-mono pixels
+        non_white_black = np.any(image_data < (255 - sensitivity), axis=-1) & np.any(image_data > sensitivity, axis=-1)
+    else:  # Grayscale Image
+        non_white_black = (image_data < (255 - sensitivity)) & (image_data > sensitivity)
+
+    # Get the bounding box of the non-mono pixels
+    non_white_black_bounding_box = np.argwhere(non_white_black)
+
+    # Crop the image to the bounding box
+    cropped_image = image_data[non_white_black_bounding_box.min(axis=0)[0]:non_white_black_bounding_box.max(axis=0)[0] + 1,
+                               non_white_black_bounding_box.min(axis=0)[1]:non_white_black_bounding_box.max(axis=0)[1] + 1]
+
+    # Return the cropped image
+    return Image.fromarray(cropped_image)
+
+
 # Function to get a random image from the API
 def download_image(image_id):
     try:
@@ -48,6 +71,9 @@ def download_image(image_id):
                     # Load the image data with PIL
                     image = Image.open(BytesIO(response.content))
 
+                    # Crop the image
+                    image = crop_image(image)
+
                     # Save the image
                     filename = os.path.join(output_folder, f"{image_id}.jpg")
                     image.save(filename, "JPEG")
@@ -64,6 +90,9 @@ def download_image(image_id):
 
             # Load the image data with PIL
             image = Image.open(BytesIO(response.content))
+
+            # Crop the image
+            image = crop_image(image)
 
             # Save the image
             filename = os.path.join(output_folder, f"{image_id}.jpg")
@@ -151,21 +180,6 @@ def process_image(filename):
             # Load the image
             image = Image.open(filename)
             print("Loading " + filename + "...")
-
-            # Convert the image to grayscale
-            grayscale_image = image.convert('L')
-
-            # Convert the grayscale image to a numpy array
-            grayscale_array = np.array(grayscale_image)
-
-            # Find the bounding box of non-black pixels (tolerance: 10)
-            rows = np.any(grayscale_array > 10, axis=1)
-            cols = np.any(grayscale_array > 10, axis=0)
-            rmin, rmax = np.where(rows)[0][[0, -1]]
-            cmin, cmax = np.where(cols)[0][[0, -1]]
-
-            # Crop the image to this bounding box
-            image = image.crop((cmin, rmin, cmax, rmax))
 
             # Resize the image (pre-dither) using nearest neighbor
             size = (300, 300)  # Set your desired size here
