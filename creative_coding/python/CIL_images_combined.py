@@ -26,7 +26,8 @@ ccdb_fields = [
     "CIL_CCDB.CCDB.Segmentation.Seg_Display_image.URL",
 ]
 
-# Function to crop an image
+# Identify and crop any letterbox around the image
+# higher sensitivity considers more grey values +/- 0 to 255 aka pure white/black
 def crop_image(image, sensitivity=0):
     # Convert the image to a NumPy array
     image_data = np.array(image)
@@ -47,12 +48,11 @@ def crop_image(image, sensitivity=0):
     # Return the cropped image
     return Image.fromarray(cropped_image)
 
-# Function to process an image
+# Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
     # Resize the image (pre-dither) using nearest neighbor
     size = (400, 400)  # Set your desired size here
     image = image.resize(size, Image.NEAREST)
-    print("Resizing...")
 
     # Convert the image to grayscale
     image = image.convert('L')
@@ -74,9 +74,19 @@ def process_image(image):
     data[white_areas] = [255, 255, 255, 0]
     image = Image.fromarray(data)
 
+    # Crop the outer 5%
+    width, height = image.size
+    left = width * 0.05
+    top = height * 0.05
+    right = width * 0.95
+    bottom = height * 0.95
+    image = image.crop((left, top, right, bottom))
+    print("Cropping...")
+
     # Resize the image (post-dither) using nearest neighbor
-    size = (300, 300)  # Set your desired size here
+    size = (1200, 1200)  # Set your desired size here
     image = image.resize(size, Image.NEAREST)
+    print("Rescaling...")
 
     return image
 
