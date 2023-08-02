@@ -12,13 +12,22 @@ def resize_image(filename):
     try:
         # Load the image
         image = Image.open(filename)
+        print("Loading " + filename)
 
         # Resize the image
         image = image.resize(image_size, Image.LANCZOS)
+        print("Resizing...")
 
         # Save the image
-        filename = os.path.splitext(filename)[0] + ".png"
-        image.save(filename, "PNG")
+        new_filename = os.path.splitext(filename)[0] + ".png"
+        image.save(new_filename, "PNG")
+        print("Saving...")
+
+        # If new file is saved successfully, remove the original file
+        if os.path.isfile(new_filename):
+            os.remove(filename)
+            print(f"Removed original file: {filename}")
+
     except Exception as e:
         print(f"An error occurred for file: {filename}. Error details: {str(e)}")
 

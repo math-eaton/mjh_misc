@@ -9,12 +9,20 @@ input_folder = "/Users/matthewheaton/Documents/CIL_API_output"
 def process_image(filename):
     # Load the image
     image = Image.open(filename)
+    print("Loading " + filename + "...")
+
+    # Resize the image (pre-dither) using nearest neighbor
+    size = (300, 300)  # Set your desired size here
+    image = image.resize(size, Image.NEAREST)
+    print("Resizing...")
 
     # Convert the image to grayscale
     image = image.convert('L')
 
     # Dither the image
     image = image.convert('1')
+    print("Dithering...")
+
 
     # Convert the image back to RGB
     image = image.convert('RGB')
@@ -29,8 +37,14 @@ def process_image(filename):
     data[white_areas] = [255, 255, 255, 0]
     image = Image.fromarray(data)
 
+    # Resize the image (post-dither) using nearest neighbor
+    size = (300, 300)  # Set your desired size here
+    image = image.resize(size, Image.NEAREST)
+
     # Save the image
     image.save(filename)
+    print("Saving " + filename)
+
 
 # Get a list of all files in the directory
 files = os.listdir(input_folder)
@@ -41,3 +55,4 @@ for filename in files:
     if filename.endswith('.png'):
         # Process the image
         process_image(os.path.join(input_folder, filename))
+        print("Processed " + filename)

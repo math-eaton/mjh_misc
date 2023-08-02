@@ -3,6 +3,7 @@ from PIL import Image
 from io import BytesIO
 import os
 import random
+import time
 
 # Define the number of images to download
 num_images = 5
@@ -78,15 +79,21 @@ def download_image(image_id):
         print(f"An error occurred for image ID: {image_id}. Error details: {str(e)}")
 
 # Fetch the list of public IDs
-response = requests.get(f"{api_url}/public_ids?from=0&size=100", auth=(username, password))
+response = requests.get(f"{api_url}/public_ids?from=0&size=50000", auth=(username, password))
 response.raise_for_status()
 
 # Get the list of IDs
 ids = [hit['_id'] for hit in response.json()['hits']['hits']]
 
+
 # Randomly shuffle the list of IDs
+# with new seed for random based on current time
+random.seed(time.time())
 random.shuffle(ids)
 
 # Download the images
 for i in range(min(num_images, len(ids))):
     download_image(ids[i])
+    print(f"Downloading... ({i+1} of {min(num_images, len(ids))})")
+
+print("Done.")
