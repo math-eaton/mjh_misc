@@ -26,8 +26,7 @@ ccdb_fields = [
     "CIL_CCDB.CCDB.Segmentation.Seg_Display_image.URL",
 ]
 
-# Identify and crop any letterbox around the image
-# higher sensitivity considers more grey values +/- 0 to 255 aka pure white/black
+# Function to crop an image
 def crop_image(image, sensitivity=0):
     # Convert the image to a NumPy array
     image_data = np.array(image)
@@ -48,6 +47,38 @@ def crop_image(image, sensitivity=0):
     # Return the cropped image
     return Image.fromarray(cropped_image)
 
+# Function to process an image
+def process_image(image):
+    # Resize the image (pre-dither) using nearest neighbor
+    size = (300, 300)  # Set your desired size here
+    image = image.resize(size, Image.NEAREST)
+    print("Resizing...")
+
+    # Convert the image to grayscale
+    image = image.convert('L')
+
+    # Dither the image
+    image = image.convert('1')
+    print("Dithering...")
+
+    # Convert the image back to RGB
+    image = image.convert('RGB')
+
+    # Make sure the image has an alpha channel
+    image = image.convert('RGBA')
+
+    # Convert white (also shades of whites) pixels to transparent
+    data = np.array(image)
+    red, green, blue, alpha = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
+    white_areas = (red > 200) & (green > 200) & (blue > 200)
+    data[white_areas] = [255, 255, 255, 0]
+    image = Image.fromarray(data)
+
+    # Resize the image (post-dither) using nearest neighbor
+    size = (300, 300)  # Set your desired size here
+    image = image.resize(size, Image.NEAREST)
+
+    return image
 
 # Function to get a random image from the API
 def download_image(image_id):
@@ -74,9 +105,12 @@ def download_image(image_id):
                     # Crop the image
                     image = crop_image(image)
 
+                    # Process the image
+                    image = process_image(image)
+
                     # Save the image
-                    filename = os.path.join(output_folder, f"{image_id}.jpg")
-                    image.save(filename, "JPEG")
+                    filename = os.path.join(output_folder, f"{image_id}.png")
+                    image.save(filename, "PNG")
         elif image_id.startswith("CIL_"):
             # Remove the "CIL_" prefix
             id_number = image_id[4:]
@@ -94,9 +128,12 @@ def download_image(image_id):
             # Crop the image
             image = crop_image(image)
 
+            # Process the image
+            image = process_image(image)
+
             # Save the image
-            filename = os.path.join(output_folder, f"{image_id}.jpg")
-            image.save(filename, "JPEG")
+            filename = os.path.join(output_folder, f"{image_id}.png")
+            image.save(filename, "PNG")
 
     except requests.exceptions.Timeout:
         print(f"Request timed out for image ID: {image_id}")
@@ -125,113 +162,4 @@ for i in range(min(num_images, len(ids))):
     download_image(ids[i])
     print(f"Downloading... ({i+1} of {min(num_images, len(ids))})")
 
-print("Download complete.")
-
-# Define the image size (5.5 inches x 300 dpi)
-image_size = (int(5.5 * 300), int(5.5 * 300))
-
-# Define the input folder
-input_folder = "/Users/matthewheaton/Documents/CIL_API_output"
-
-# Function to resize an image
-def resize_image(filename):
-    # Check if the image has already been processed
-    if "_resized" not in filename:
-        try:
-            # Load the image
-            image = Image.open(filename)
-            print("Loading " + filename)
-
-            # Resize the image
-            image = image.resize(image_size, Image.LANCZOS)
-            print("Resizing...")
-
-            # Save the image with a new filename
-            new_filename = os.path.splitext(filename)[0] + "_resized.png"
-            image.save(new_filename, "PNG")
-            print("Saving...")
-
-            # If new file is saved successfully, remove the original file
-            if os.path.isfile(new_filename):
-                os.remove(filename)
-                print(f"Removed original file: {filename}")
-
-        except Exception as e:
-            print(f"An error occurred for file: {filename}. Error details: {str(e)}")
-
-# Resize all images in the input folder
-for filename in os.listdir(input_folder):
-    if filename.endswith(".jpg"):
-        resize_image(os.path.join(input_folder, filename))
-
-print("Resize complete.")
-
-# Define the directory with the images
-input_folder = "/Users/matthewheaton/Documents/CIL_API_output"
-
-# Function to process an image
-def process_image(filename):
-    # Define the post-processing image size
-    post_size = (300, 300)  # Set your desired size here
-
-    # Check if the image has already been processed
-    if f"_{post_size[0]}x{post_size[1]}" not in filename:
-        try:
-            # Load the image
-            image = Image.open(filename)
-            print("Loading " + filename + "...")
-
-            # Resize the image (pre-dither) using nearest neighbor
-            size = (300, 300)  # Set your desired size here
-            image = image.resize(size, Image.NEAREST)
-            print("Resizing...")
-
-            # Convert the image to grayscale
-            image = image.convert('L')
-
-            # Dither the image
-            image = image.convert('1')
-            print("Dithering...")
-
-            # Convert the image back to RGB
-            image = image.convert('RGB')
-
-            # Make sure the image has an alpha channel
-            image = image.convert('RGBA')
-
-            # Convert white (also shades of whites) pixels to transparent
-            data = np.array(image)
-            red, green, blue, alpha = data[:,:,0], data[:,:,1], data[:,:,2], data[:,:,3]
-            white_areas = (red > 200) & (green > 200) & (blue > 200)
-            data[white_areas] = [255, 255, 255, 0]
-            image = Image.fromarray(data)
-
-            # Resize the image (post-dither) using nearest neighbor
-            image = image.resize(post_size, Image.NEAREST)
-
-            # Save the image with a new filename that includes the resolution
-            new_filename = os.path.splitext(filename)[0] + f"_{post_size[0]}x{post_size[1]}.png"
-            image.save(new_filename)
-            print("Saving " + new_filename)
-
-            # If new file is saved successfully, remove the original file
-            if os.path.isfile(new_filename):
-                os.remove(filename)
-                print(f"Removed original file: {filename}")
-
-        except Exception as e:
-            print(f"An error occurred for file: {filename}. Error details: {str(e)}")
-
-# Get a list of all files in the directory
-files = os.listdir(input_folder)
-
-# Loop over all files
-for filename in files:
-    # Check if the file is an image
-    if filename.endswith('.png'):
-        # Process the image
-        process_image(os.path.join(input_folder, filename))
-        print("Processed " + filename)
-
-print("Image processing complete.")
-
+print("Download and processing complete.")
