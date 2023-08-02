@@ -5,9 +5,15 @@ import os
 import random
 import time
 import numpy as np
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
+
+
+# Record the start time
+start_time = time.time()
 
 # Define the number of images to download
-num_images = 5
+num_images = 10
 
 # Define the output folder
 output_folder = "/Users/matthewheaton/Documents/CIL_API_output"
@@ -28,7 +34,7 @@ ccdb_fields = [
 
 # Identify and crop any letterbox around the image
 # higher sensitivity considers more grey values +/- 0 to 255 aka pure white/black
-def crop_image(image, sensitivity=0):
+def crop_image(image, sensitivity=1):
     # Convert the image to a NumPy array
     image_data = np.array(image)
 
@@ -51,7 +57,7 @@ def crop_image(image, sensitivity=0):
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
     # Resize the image (pre-dither) using nearest neighbor
-    size = (400, 400)  # Set your desired size here
+    size = (600, 450)  # Set your desired size here
     image = image.resize(size, Image.NEAREST)
 
     # Convert the image to grayscale
@@ -74,30 +80,42 @@ def process_image(image):
     data[white_areas] = [255, 255, 255, 0]
     image = Image.fromarray(data)
 
-    # Crop the outer 5%
+    # Crop the outer 2%
     width, height = image.size
-    left = width * 0.05
-    top = height * 0.05
-    right = width * 0.95
-    bottom = height * 0.95
+    left = width * 0.02
+    top = height * 0.02
+    right = width * 0.98
+    bottom = height * 0.98
     image = image.crop((left, top, right, bottom))
     print("Cropping...")
 
     # Resize the image (post-dither) using nearest neighbor
-    size = (1200, 1200)  # Set your desired size here
+    size = (1200, 900)  # Set your desired size here
     image = image.resize(size, Image.NEAREST)
     print("Rescaling...")
 
     return image
 
+# Configure retries
+retry_strategy = Retry(
+    total=5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["HEAD", "GET", "OPTIONS"],
+    backoff_factor=1
+)
+adapter = HTTPAdapter(max_retries=retry_strategy)
+http = requests.Session()
+http.mount("https://", adapter)
+http.mount("http://", adapter)
+
 # Function to get a random image from the API
 def download_image(image_id):
     try:
         # Fetch the document data from the API
-        response = requests.get(f"{api_url}/public_documents/{image_id}", auth=(username, password), timeout=5)
+        response = http.get(f"{api_url}/public_documents/{image_id}", auth=(username, password))
         response.raise_for_status()
         data = response.json()
-
+        
         # Check the ID type
         if image_id.startswith("CCDB_"):
             # Check each field
@@ -165,7 +183,11 @@ ids = [hit['_id'] for hit in response.json()['hits']['hits']]
 
 # Randomly shuffle the list of IDs
 # with new seed for random based on current time
-random.seed(time.time())
+# random.seed(time.time())
+# random.shuffle(ids)
+
+# alternatively, use a seed for ID shuffle
+random.seed(666)
 random.shuffle(ids)
 
 # Download the images
@@ -174,3 +196,11 @@ for i in range(min(num_images, len(ids))):
     print(f"Downloading... ({i+1} of {min(num_images, len(ids))})")
 
 print("Done.")
+
+# Record the end time
+end_time = time.time()
+
+# Calculate and print the total execution time
+total_time_sec= end_time - start_time
+total_time_min=total_time_sec/60
+print(f"Total runtime: {round(total_time_min, 2)} minutes")
