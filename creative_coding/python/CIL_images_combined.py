@@ -109,11 +109,18 @@ def calculate_entropy(image):
 
 # Process the image using Floyd-Steinberg error diffusion
 def process_image(image):
-    # Resize the image (pre-dither) while maintaining aspect ratio
-    size = (1200, 1200)  # Set your desired size here
-    image.thumbnail(size, Image.NEAREST)
     
-    # Crop the image to desired aspect ratio (1:1 in this case)
+    # Check the input image resolution
+    min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
+    width, height = image.size
+    if width < min_resolution or height < min_resolution:
+        return None
+    
+    # Resize the image (pre-dither) while maintaining aspect ratio
+    size = (1024, 1024)  # Set your desired size here
+    image.thumbnail(size, Image.BILINEAR)
+    
+    # Crop the image to desired aspect ratio
     width, height = image.size
     new_size = min(width, height)
 
@@ -157,7 +164,7 @@ def process_image(image):
     image = image.crop((left, top, right, bottom))
 
     # Resize the image (post-dither) using nearest neighbor
-    size = (1600, 1600)  # Set your desired size here
+    size = (2400, 2400)  # Set your desired size here
     # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
     print("Rescaling...")
@@ -227,16 +234,22 @@ def download_image(image_id):
             print(f"Brightness: {brightness}, Contrast: {contrast}, Entropy: {entropy}")
 
             # Check the image against your thresholds
-            if brightness < 0.75 and contrast > 10 and entropy < 7:
-                # Process the image
-                image = process_image(image)
+            if brightness < 0.9 and brightness > 0.1 and contrast > 20 and entropy < 7:
+                # Try to process the image
+                processed_image = process_image(image)
 
-                # Save the image
-                filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
-                image.save(filename, "PNG")
+                # If the processed image is not None, save it
+                if processed_image is not None:
+                    # Save the image
+                    filename = os.path.join(output_folder, f"{image_id}_{processed_image.size[0]}x{processed_image.size[1]}.png")
+                    processed_image.save(filename, "PNG")
 
-                print("Image passed threshold, proceed.")
-                return True
+                    print("Image passed threshold, proceed.")
+                    return True
+                else:
+                    print("Image did not pass resolution check, skipping...")
+                    return False
+
 
     except requests.exceptions.Timeout:
         print(f"Request timed out for image ID: {image_id}. Please check your network connection.")
@@ -265,6 +278,9 @@ response.raise_for_status()
 # Get the list of IDs
 ids = [hit['_id'] for hit in response.json()['hits']['hits']]
 
+# Filter the IDs to only include those up to 50000 to avoid placeholder images
+ids = [id for id in ids if int(id[4:]) <= 50000]  # Assumes all IDs start with 'CIL_' which they seem to
+
 # Randomly shuffle the list of IDs
 # with new seed for random based on current time
 random.seed(time.time())
@@ -281,7 +297,7 @@ while downloaded_images < num_images and index < len(ids):
     if download_image(ids[index]):
         # If the download was successful, increment the counter
         downloaded_images += 1
-        print(f"Downloading... ({downloaded_images} of {min(num_images, len(ids))})")
+        print(f"Downloading {ids[index]} ({downloaded_images} of {min(num_images, len(ids))})")
     # Always increment the index, whether the download was successful or not
     index += 1
 
