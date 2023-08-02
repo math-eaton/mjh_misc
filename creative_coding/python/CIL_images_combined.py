@@ -12,6 +12,12 @@ from urllib3.util import Retry
 # Record the start time
 start_time = time.time()
 
+try:
+    with open('processed_images.txt', 'r') as file:
+        processed_ids = set(line.strip() for line in file)
+except FileNotFoundError:
+    processed_ids = set()
+
 # Define the number of images to download
 num_images = 4320
 
@@ -99,11 +105,11 @@ def calculate_entropy(image):
         # Calculate entropy
         entropy = -sum([p * np.log2(p) for p in probability_histogram if p != 0])
 
-        print("Assessing image qualities...")
+        print("assessing image qualities...")
         return entropy
 
     except Exception as e:
-        print(f"An error occurred in calculate_entropy: {str(e)}")
+        print(f"an error occurred in calculate_entropy: {str(e)}")
         return None
 
 
@@ -133,14 +139,14 @@ def process_image(image):
     aspect_ratio = new_size / new_size  # e.g. square is 1.0
 
     image = image.crop((left, top, right, bottom))
-    print(f"Cropping to aspect ratio {aspect_ratio}")
+    print(f"cropping to aspect ratio {aspect_ratio}")
 
     # Convert the image to grayscale
     image = image.convert('L')
 
     # Dither the image
     image = image.convert('1')
-    print("Dithering...")
+    print("dithering...")
 
     # Convert the image back to RGB
     image = image.convert('RGB')
@@ -167,7 +173,7 @@ def process_image(image):
     size = (1200, 1200)  # Set your desired size here
     # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
-    print("Rescaling...")
+    print("rescaling...")
 
     return image
 
@@ -192,6 +198,11 @@ def download_image(image_id):
         data = response.json()
 
         image_url = None
+        
+        # check if image has previously been processed
+        if image_id in processed_ids:
+            print(f"Image with ID: {image_id} has already been processed, skipping...")
+            return False
 
         # Check the ID type
         if image_id.startswith("CCDB_"):
@@ -231,7 +242,7 @@ def download_image(image_id):
             entropy = calculate_entropy(image)
 
             # Print the brightness, contrast, and entropy
-            print(f"Brightness: {brightness}, Contrast: {contrast}, Entropy: {entropy}")
+            print(f"brightness: {brightness}, contrast: {contrast}, entropy: {entropy}")
 
             # Check the image against your thresholds
             if brightness < 0.9 and brightness > 0.1 and contrast > 20 and entropy < 7:
@@ -244,26 +255,29 @@ def download_image(image_id):
                     filename = os.path.join(output_folder, f"{image_id}_{processed_image.size[0]}x{processed_image.size[1]}.png")
                     processed_image.save(filename, "PNG")
 
-                    print("Image passed threshold, proceed.")
+                    with open('processed_images.txt', 'a') as file:
+                        file.write(f"{image_id}\n")
+
+                    print("image passed threshold, proceed.")
                     return True
                 else:
-                    print("Image did not pass resolution check, skipping...")
+                    print("image did not pass resolution check, skipping...")
                     return False
 
 
     except requests.exceptions.Timeout:
-        print(f"Request timed out for image ID: {image_id}. Please check your network connection.")
+        print(f"request timed out for image ID: {image_id}. please check network connection.")
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
-            print(f"Image not found for ID: {image_id}")
+            print(f"image not found for ID: {image_id}")
         elif e.response.status_code == 429:
-            print(f"Rate limit exceeded for image ID: {image_id}. Please wait before sending more requests.")
+            print(f"rate limit exceeded for image ID: {image_id}. please wait before sending more requests.")
         else:
-            print(f"HTTP error occurred for image ID: {image_id}. Error details: {str(e)}")
+            print(f"HTTP error occurred for image ID: {image_id}. error details: {str(e)}")
 
     except Exception as e:
-        print(f"An error occurred for image ID: {image_id}. Error details: {str(e)}")
+        print(f"an error occurred for image ID: {image_id}. error details: {str(e)}")
 
     return False
 
@@ -297,15 +311,15 @@ while downloaded_images < num_images and index < len(ids):
     if download_image(ids[index]):
         # If the download was successful, increment the counter
         downloaded_images += 1
-        print(f"Downloading {ids[index]} ({downloaded_images} of {min(num_images, len(ids))})")
+        print(f"downloading {ids[index]} ({downloaded_images} of {min(num_images, len(ids))})")
     # Always increment the index, whether the download was successful or not
     index += 1
 
-print("Done.")
+print("done.")
 # Record the end time
 end_time = time.time()
 
 # Calculate and print the total execution time
 total_time_sec= end_time - start_time
 total_time_min=total_time_sec/60
-print(f"Total runtime: {round(total_time_min, 2)} minutes")
+print(f"total runtime: {round(total_time_min, 2)} minutes")
