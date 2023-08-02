@@ -13,7 +13,7 @@ from urllib3.util import Retry
 start_time = time.time()
 
 # Define the number of images to download
-num_images = 10
+num_images = 4320
 
 # Define the output folder
 output_folder = "/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/CIL_square_images"
@@ -117,7 +117,7 @@ def process_image(image):
         return None
     
     # Resize the image (pre-dither) while maintaining aspect ratio
-    size = (1024, 1024)  # Set your desired size here
+    size = (2048, 2048)  # Set your desired size here
     image.thumbnail(size, Image.BILINEAR)
     
     # Crop the image to desired aspect ratio
@@ -164,7 +164,7 @@ def process_image(image):
     image = image.crop((left, top, right, bottom))
 
     # Resize the image (post-dither) using nearest neighbor
-    size = (2400, 2400)  # Set your desired size here
+    size = (1200, 1200)  # Set your desired size here
     # size = (1200, 900)  # Size for video
     image = image.resize(size, Image.NEAREST)
     print("Rescaling...")
