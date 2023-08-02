@@ -23,7 +23,6 @@ def process_image(filename):
     image = image.convert('1')
     print("Dithering...")
 
-
     # Convert the image back to RGB
     image = image.convert('RGB')
 
