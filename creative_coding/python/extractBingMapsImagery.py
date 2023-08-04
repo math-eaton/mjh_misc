@@ -6,7 +6,7 @@ import config
 zoom_level = 4
 map_size = "500,500"
 map_style = "Aerial"
-output_dir = "/Users/matthewheaton/Documents/GitHub/mjh_misc/output/bing_imagery"
+output_dir = "output/bing_imagery"
 
 
 def get_bing_map_image(center_latitude, center_longitude):
@@ -40,3 +40,4 @@ def get_bing_map_image(center_latitude, center_longitude):
 
 # Example usage
 get_bing_map_image(47.6097, -122.3331)
+print("done.")
