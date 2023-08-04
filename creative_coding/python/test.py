@@ -1,2 +1,6 @@
 import sys
-print(sys.executable)
+# print(sys.executable)
+
+# help('modules')
+
+print(sys.path)
