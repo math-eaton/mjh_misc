@@ -10,7 +10,8 @@ from process_imagery import process_image
 zoom_level = 15
 map_size = "500,500"
 map_style = "Aerial"
-output_dir = "output/bing_imagery"
+unprocessed_output_dir = "output/bing_imagery/point"
+processed_output_dir = "output/processed_imagery/point"
 
 
 def get_bing_map_image(center_latitude, center_longitude, application_id):
@@ -22,7 +23,7 @@ def get_bing_map_image(center_latitude, center_longitude, application_id):
         "center": f"{center_latitude},{center_longitude}",
         "zoomlevel": zoom_level,
         "mapSize": map_size,
-        "format": "jpeg",
+        "format": "png",
         "key": config.bing_api_key,
     }
 
@@ -55,21 +56,27 @@ def get_bing_map_image(center_latitude, center_longitude, application_id):
         # Crop the image
         image = image.crop((left, top, right, bottom))
 
-        # Define the output file path
-        output_file_path = os.path.join(output_dir, f"{application_id}.jpg")
+        # Define the output file path for the unprocessed image
+        unprocessed_output_file_path = os.path.join(unprocessed_output_dir, f"{application_id}.png")
 
-        # Save the image
-        image.save(output_file_path)
-                
+        # Save the unprocessed image
+        image.save(unprocessed_output_file_path)
+
+        # Define the output file path for the processed image
+        processed_output_file_path = os.path.join(processed_output_dir, f"{application_id}.png")
+
         # Process the image
-        processed_output_path = os.path.join("output/processed_imagery/point", f"{application_id}.jpg")
-        process_image(output_file_path, processed_output_path)
+        processed_image = process_image(unprocessed_output_file_path, processed_output_file_path)
+
+        # If the image was processed successfully, save it
+        if processed_image is not None:
+            # Save the processed image
+            processed_image.save(processed_output_file_path)
+        else:
+            print(f"Image for application_id {application_id} was not processed due to low resolution.")
 
     else:
         print(f"Failed to get map image: {response.content}")
-
-# Read the CSV file
-# df = pd.read_csv('creative_coding/data/transmitter_subset.csv')
 
 # Read the CSV file and get the first 10 rows for debugging purposes
 df = pd.read_csv('creative_coding/data/fm_contours_sample.csv').head(10)

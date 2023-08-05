@@ -10,6 +10,7 @@ def process_image(image_path, output_path):
     min_resolution = 400  # Set minimum resolution. API should provide 512 max thumbnail
     width, height = image.size
     if width < min_resolution or height < min_resolution:
+        print(f"Image for application_id {os.path.basename(image_path).split('.')[0]} was not processed due to low resolution.")
         return None
     
     # Resize the image (pre-dither) while maintaining aspect ratio
@@ -17,19 +18,19 @@ def process_image(image_path, output_path):
     image.thumbnail(size, Image.BILINEAR)
     
     # Crop the image to desired aspect ratio
-    width, height = image.size
-    new_size = min(width, height)
+    # width, height = image.size
+    # new_size = min(width, height)
 
-    left = (width - new_size)/2
-    top = (height - new_size)/2
-    right = (width + new_size)/2
-    bottom = (height + new_size)/2
+    # left = (width - new_size)/2
+    # top = (height - new_size)/2
+    # right = (width + new_size)/2
+    # bottom = (height + new_size)/2
 
-    # Calculate and print the aspect ratio
-    aspect_ratio = new_size / new_size  # e.g. square is 1.0
+    # # Calculate and print the aspect ratio
+    # aspect_ratio = new_size / new_size  # e.g. square is 1.0
 
-    image = image.crop((left, top, right, bottom))
-    print(f"cropping to aspect ratio {aspect_ratio}")
+    # image = image.crop((left, top, right, bottom))
+    # print(f"cropping to aspect ratio {aspect_ratio}")
 
     # Convert the image to grayscale
     image = image.convert('L')
@@ -67,3 +68,5 @@ def process_image(image_path, output_path):
 
     # Save the processed image
     image.save(output_path)
+
+    return image

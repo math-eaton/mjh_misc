@@ -10,7 +10,9 @@ from process_imagery import process_image
 # map config
 map_size = "500,500"
 map_style = "Aerial"
-output_dir = "output/bing_imagery/area"
+# output_dir = "output/bing_imagery/area"
+unprocessed_output_dir = "output/bing_imagery/area"
+processed_output_dir = "output/processed_imagery/area"
 
 
 def get_bing_map_image(min_latitude, min_longitude, max_latitude, max_longitude, application_id):
@@ -54,16 +56,32 @@ def get_bing_map_image(min_latitude, min_longitude, max_latitude, max_longitude,
         # Crop the image
         image = image.crop((left, top, right, bottom))
 
-        # Define the output file path
-        output_file_path = os.path.join(output_dir, f"{application_id}.png")
+        # Define the output file path for the unprocessed image
+        unprocessed_output_file_path = os.path.join(unprocessed_output_dir, f"{application_id}.png")
 
-        # Save the image
-        image.save(output_file_path)
-        
+        # Save the unprocessed image
+        image.save(unprocessed_output_file_path)
+
+        # Define the output file path for the processed image
+        processed_output_file_path = os.path.join(processed_output_dir, f"{application_id}.png")
+
         # Process the image
-        processed_output_path = os.path.join("output/bing_imagery/area", f"{application_id}.png")
-        process_image(output_file_path, processed_output_path)
+        processed_image = process_image(unprocessed_output_file_path, processed_output_file_path)
 
+        # If the image was processed successfully, save it
+        if processed_image is not None:
+            # Define the output file path for the processed image
+            processed_output_file_path = os.path.join(processed_output_dir, f"{application_id}.png")
+
+            # Save the processed image
+            processed_image.save(processed_output_file_path)
+        else:
+            print(f"Image for application_id {application_id} was not processed due to low resolution.")
+
+
+        # Save the processed image
+        processed_image.save(processed_output_file_path)
+                
     else:
         print(f"Failed to get map image: {response.content}")
 
