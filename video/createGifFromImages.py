@@ -53,12 +53,12 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
 
     print("done.")
 
-image_folder = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area' 
+image_folder = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point' 
 image_files = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith(".png")])
 
 # Take the first 100 images for testing results
 image_files = image_files[:250]
 
-gif_path = "/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area.gif"
+gif_path = "/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/point.gif"
 create_gif(image_files, gif_path)
 # create_gif_batch(image_files, gif_path)

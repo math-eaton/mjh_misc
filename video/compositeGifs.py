@@ -2,35 +2,39 @@ from PIL import Image
 import imageio
 from tqdm import tqdm
 
-def superimpose_gifs(gif_path1, gif_path2, output_path, alpha=0.5):
-    # Read the GIFs
-    gif1 = imageio.mimread(gif_path1)
-    gif2 = imageio.mimread(gif_path2)
+def superimpose_gifs(gif_path1, gif_path2, output_path):
+    # Create readers for the GIFs
+    reader1 = imageio.get_reader(gif_path1)
+    reader2 = imageio.get_reader(gif_path2)
 
-    # Make sure the GIFs have the same number of frames
-    if len(gif1) != len(gif2):
+    # Check number of frames
+    if reader1.get_length() != reader2.get_length():
         raise ValueError("GIFs must have the same number of frames")
 
     # Process each frame
     output_frames = []
-    for frame1, frame2 in tqdm(zip(gif1, gif2), total=len(gif1), desc="Processing frames"):
+    for frame1, frame2 in tqdm(zip(reader1, reader2), total=reader1.get_length(), desc="Processing frames"):
         # Convert to PIL Image
         pil_frame1 = Image.fromarray(frame1)
         pil_frame2 = Image.fromarray(frame2)
 
-        # Superimpose with blending
-        blended_frame = Image.blend(pil_frame1, pil_frame2, alpha=alpha)
+        # Make sure both images are in RGBA mode
+        pil_frame1 = pil_frame1.convert("RGBA")
+        pil_frame2 = pil_frame2.convert("RGBA")
+
+        # Composite images
+        composite_frame = Image.alpha_composite(pil_frame1, pil_frame2)
 
         # Append to output frames
-        output_frames.append(blended_frame)
+        output_frames.append(composite_frame)
 
     # Save the output GIF
-    imageio.mimsave(output_path, [frame.convert("RGBA") for frame in output_frames], 'GIF', duration=0.1)
+    imageio.mimsave(output_path, [frame.convert("RGBA") for frame in output_frames], 'GIF', duration=0.09, loop=0, disposal=2)
 
     print("done.")
 
-# Usage:
-gif_path1 = 'path/to/first.gif'
-gif_path2 = 'path/to/second.gif'
-output_path = 'path/to/output.gif'
-superimpose_gifs(gif_path1, gif_path2, output_path, alpha=0.5)
+
+gif_path1 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area.gif'
+gif_path2 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/polyline.gif'
+output_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area_combined.gif'
+superimpose_gifs(gif_path1, gif_path2, output_path)
