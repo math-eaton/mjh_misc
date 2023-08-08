@@ -8,10 +8,19 @@ def create_gif(image_files, gif_path):
     images = [imageio.imread(x) for x in tqdm(image_files, desc="Reading images")]
 
     # Save images as a GIF
-    imageio.mimsave(gif_path, images, 'GIF', duration=0.09, oopl=1, disposal=2)
+    imageio.mimsave(gif_path, images, 'GIF', duration=0.09, loop=0, disposal=2)
 
     print("done.")
 
+# List of input directories
+image_folders = [
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area/inverted',
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point/inverted',
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/polyline_images/inverted',
+]
+
+# Base path for output GIFs
+output_base_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/'
 
 
 def create_gif_batch(image_files, gif_path, batch_size=500):
@@ -29,7 +38,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
         
         # Create a temporary GIF for this batch
         temp_gif_path = f"temp_{i}.gif"
-        imageio.mimsave(temp_gif_path, images, 'GIF', duration=0.09, oopl=1, disposal=2)
+        imageio.mimsave(temp_gif_path, images, 'GIF', duration=0.09, loop=1, disposal=2)
         temp_gifs.append(temp_gif_path)
 
     # Open the first temporary GIF to get its size
@@ -45,7 +54,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
                 final_gif_frames.append(final_frame)
 
     # Save the final GIF with the proper disposal method
-    final_gif_frames[0].save(gif_path, save_all=True, append_images=final_gif_frames[1:], duration=90, loop=0, disposal=2)
+    final_gif_frames[0].save(gif_path, save_all=True, append_images=final_gif_frames[1:], duration=90, loop=1, disposal=2)
 
     # Remove temporary GIFs
     for temp_gif in temp_gifs:
@@ -53,12 +62,17 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
 
     print("done.")
 
-image_folder = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point' 
-image_files = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith(".png")])
-
 # Take the first 100 images for testing results
-image_files = image_files[:250]
+# image_files = image_files[:250]
 
-gif_path = "/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/point.gif"
-create_gif(image_files, gif_path)
-# create_gif_batch(image_files, gif_path)
+for folder in image_folders:
+    # Get all PNG files in the current directory
+    image_files = sorted([os.path.join(folder, img) for img in os.listdir(folder) if img.endswith(".png")])
+
+    # Extract the last two folder level names
+    unique_name = "_".join(folder.strip('/').split('/')[-2:])
+
+    # Create a unique GIF path for the current directory
+    gif_path = os.path.join(output_base_path, f"{unique_name}.gif")
+
+    create_gif(image_files, gif_path)

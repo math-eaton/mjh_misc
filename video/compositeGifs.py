@@ -34,7 +34,7 @@ def superimpose_gifs(gif_path1, gif_path2, output_path):
     print("done.")
 
 
-gif_path1 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area.gif'
-gif_path2 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/polyline.gif'
-output_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area_combined.gif'
+gif_path1 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area_inverted.gif'
+gif_path2 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/polyline_images_inverted.gif'
+output_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area_combined_inverted.gif'
 superimpose_gifs(gif_path1, gif_path2, output_path)
