@@ -2,21 +2,26 @@ import os
 import imageio.v2 as imageio
 from tqdm import tqdm
 from PIL import Image, ImageSequence
+from PIL import Image, ImageDraw
 
 def create_gif(image_files, gif_path):
     # Open images
-    images = [imageio.imread(x) for x in tqdm(image_files, desc="Reading images")]
+    images = [Image.open(x).convert("RGBA") for x in tqdm(image_files, desc="Reading images")]
+
+    # You may optionally resize the images
+    # size = (600, 600)
+    # images = [img.resize(size, Image.NEAREST) for img in images]
 
     # Save images as a GIF
-    imageio.mimsave(gif_path, images, 'GIF', duration=0.09, loop=0, disposal=2)
+    images[0].save(gif_path, save_all=True, append_images=images[1:], optimize=True, duration=75, loop=0, disposal=2)
 
     print("done.")
 
 # List of input directories
 image_folders = [
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area/inverted',
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point/inverted',
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/polyline_images/inverted',
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area',
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point',
+    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/polyline',
 ]
 
 # Base path for output GIFs
@@ -38,7 +43,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
         
         # Create a temporary GIF for this batch
         temp_gif_path = f"temp_{i}.gif"
-        imageio.mimsave(temp_gif_path, images, 'GIF', duration=0.09, loop=1, disposal=2)
+        imageio.mimsave(temp_gif_path, images, 'GIF', duration=0.09, loop=0, disposal=2)
         temp_gifs.append(temp_gif_path)
 
     # Open the first temporary GIF to get its size
@@ -54,7 +59,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
                 final_gif_frames.append(final_frame)
 
     # Save the final GIF with the proper disposal method
-    final_gif_frames[0].save(gif_path, save_all=True, append_images=final_gif_frames[1:], duration=90, loop=1, disposal=2)
+    final_gif_frames[0].save(gif_path, save_all=True, append_images=final_gif_frames[1:], duration=90, loop=0, disposal=2)
 
     # Remove temporary GIFs
     for temp_gif in temp_gifs:

@@ -37,11 +37,11 @@ def superimpose_gifs(gif_path1, gif_path2, output_path):
         output_frames.append(composite_frame)
 
     # Save the output GIF
-    imageio.mimsave(output_path, output_frames, format='GIF', duration=0.09, loop=0, disposal=2)
+    imageio.mimsave(output_path, output_frames, format='GIF', duration=0.075, loop=0, disposal=2)
 
     print("done.")
 
-gif_path1 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area_inverted.gif'
-gif_path2 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/polyline_inverted.gif'
-output_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/combined_inverted.gif'
+gif_path1 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/area.gif'
+gif_path2 = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/polyline.gif'
+output_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/combined.gif'
 superimpose_gifs(gif_path1, gif_path2, output_path)
