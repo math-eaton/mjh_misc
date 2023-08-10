@@ -14,7 +14,7 @@ def create_video(image_files, video_path, fps, alpha_color=(255, 255, 255)):
     height, width, channels = frame.shape
 
     # Define the codec and create a VideoWriter object
-    video = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'avc1'), fps, (width, height))
+    video = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'H264'), fps, (width, height))
 
     for image in image_files:
         img = Image.open(image)

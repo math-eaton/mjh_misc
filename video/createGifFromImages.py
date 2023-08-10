@@ -2,7 +2,6 @@ import os
 import imageio.v2 as imageio
 from tqdm import tqdm
 from PIL import Image, ImageSequence
-from PIL import Image, ImageDraw
 
 def create_gif(image_files, gif_path):
     # Open images

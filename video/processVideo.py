@@ -18,7 +18,7 @@ def resize_video(input_video_path, output_video_path, resolution):
     ]
     subprocess.run(command)
 
-def change_codec_and_bitrate(input_video_path, output_video_path, codec='libx264', bitrate='192k'):
+def change_codec_and_bitrate(input_video_path, output_video_path, codec='H264', bitrate='192k'):
     command = [
         'ffmpeg',
         '-i', input_video_path,
@@ -30,7 +30,7 @@ def change_codec_and_bitrate(input_video_path, output_video_path, codec='libx264
 
 # Path variables
 input_video_path = "/Users/matthewheaton/Desktop/screenshot/Screen Recording 2023-08-09 at 5.39.02 PM.mov"
-output_video_path = "/Users/matthewheaton/Documents/GitHub/cdp_colloquium_i/site_refactor/assets/animations/WFH_DJ.mov"
+output_video_path = "/Users/matthewheaton/Documents/GitHub/cdp_colloquium_i/site_refactor/assets/gif/WFH_DJ.mp4"
 speedup_factor = 1.0
 resolution = (1071, 765)
 codec = 'libx264'
