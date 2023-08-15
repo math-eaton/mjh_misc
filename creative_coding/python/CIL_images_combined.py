@@ -1,4 +1,5 @@
 import requests
+import config
 from PIL import Image
 from io import BytesIO
 import os
@@ -22,14 +23,14 @@ except FileNotFoundError:
 num_images = 4320
 
 # Define the output folder
-output_folder = "/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/CIL_square_images"
+output_folder = "/Users/matthewheaton/Documents/CIL_unprocessed"
 
 # Base URL for the API
 api_url = "https://cilia.crbs.ucsd.edu/rest"
 
 # Authentication details
-username = 'columbia_edu'
-password = 'nkWBqPTAHGDdlz0'
+config.CIL_API_USER = 'columbia_edu'
+config.CIL_API_PW = 'nkWBqPTAHGDdlz0'
 
 # Define the fields for CCDB images
 ccdb_fields = [
@@ -189,8 +190,7 @@ http = requests.Session()
 http.mount("https://", adapter)
 http.mount("http://", adapter)
 
-
-def download_image(image_id):
+def download_and_maybe_process_image(image_id, process=True):
     try:
         # Fetch the document data from the API
         response = http.get(f"{api_url}/public_documents/{image_id}", auth=(username, password))
@@ -232,37 +232,49 @@ def download_image(image_id):
             image = crop_image(image)
 
 
+            # Check if the processing is required
+            if process:
 
-            # Calculate the brightness, contrast, and entropy
-            # BRIGHTNESS 0-1
-            brightness = calculate_brightness(image)
-            # CONTRAST 1-255
-            contrast = calculate_contrast(image)
-            # ENTROPY 1-8
-            entropy = calculate_entropy(image)
+                # Calculate the brightness, contrast, and entropy
+                # BRIGHTNESS 0-1
+                brightness = calculate_brightness(image)
+                # CONTRAST 1-255
+                contrast = calculate_contrast(image)
+                # ENTROPY 1-8
+                entropy = calculate_entropy(image)
 
-            # Print the brightness, contrast, and entropy
-            print(f"brightness: {brightness}, contrast: {contrast}, entropy: {entropy}")
+                # Print the brightness, contrast, and entropy
+                print(f"brightness: {brightness}, contrast: {contrast}, entropy: {entropy}")
 
-            # Check the image against your thresholds
-            if brightness < 0.9 and brightness > 0.1 and contrast > 20 and entropy < 7:
-                # Try to process the image
-                processed_image = process_image(image)
+                # hardcoded threshold to compare images against
+                # brightness_min = 0.1
+                # brightness_max = 0.9
+                # contrast_min = 20
+                # entropy_max = 7
 
-                # If the processed image is not None, save it
-                if processed_image is not None:
-                    # Save the image
-                    filename = os.path.join(output_folder, f"{image_id}_{processed_image.size[0]}x{processed_image.size[1]}.png")
-                    processed_image.save(filename, "PNG")
+                brightness_min = 0
+                brightness_max = 1
+                contrast_min = 0
+                entropy_max = 10
 
-                    with open('processed_images.txt', 'a') as file:
-                        file.write(f"{image_id}\n")
+                # Check the image against your thresholds
+                if brightness < brightness_max and brightness > brightness_min and contrast > contrast_min and entropy < entropy_max:
+                    # Try to process the image
+                    processed_image = process_image(image)
 
-                    print("image passed threshold, proceed.")
-                    return True
-                else:
-                    print("image did not pass resolution check, skipping...")
-                    return False
+                    # If the processed image is not None, save it
+                    if processed_image is not None:
+                        filename = os.path.join(output_folder, f"{image_id}_{processed_image.size[0]}x{processed_image.size[1]}.png")
+                        processed_image.save(filename, "PNG")
+                        print("image passed threshold, proceed.")
+                        return True
+                    else:
+                        print("image did not pass resolution check, skipping...")
+                        return False
+            else:
+                filename = os.path.join(output_folder, f"{image_id}_{image.size[0]}x{image.size[1]}.png")
+                image.save(filename, "PNG")
+                return True
 
 
     except requests.exceptions.Timeout:
@@ -307,12 +319,10 @@ downloaded_images = 0
 index = 0
 
 while downloaded_images < num_images and index < len(ids):
-    # Try to download the image at the current index
-    if download_image(ids[index]):
-        # If the download was successful, increment the counter
+    # Call with process=True to process the image or process=False to just download
+    if download_and_maybe_process_image(ids[index], process=False):
         downloaded_images += 1
         print(f"downloading {ids[index]} ({downloaded_images} of {min(num_images, len(ids))})")
-    # Always increment the index, whether the download was successful or not
     index += 1
 
 print("done.")

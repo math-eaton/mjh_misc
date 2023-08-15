@@ -3,7 +3,7 @@ import subprocess
 from PIL import Image
 from tqdm import tqdm
 
-def convert_mov_to_gif(input_mov, output_gif, resize=(1380, 760), frame_rate=12):
+def convert_mov_to_gif(input_mov, output_gif, resize=(1240, 720), frame_rate=12):
     # Create a temporary directory for frames
     temp_dir = "temp_frames"
     os.makedirs(temp_dir, exist_ok=True)
@@ -36,7 +36,7 @@ def convert_mov_to_gif(input_mov, output_gif, resize=(1380, 760), frame_rate=12)
     print("Conversion done.")
 
 
-input_mov = "/Users/matthewheaton/Desktop/screenshot/Screen Recording 2023-08-10 at 6.20.53 PM.mov" 
-output_gif = "/Users/matthewheaton/Documents/GitHub/cdp_colloquium_i/site_refactor/assets/gif/FM_slide.gif" 
+input_mov = "/Users/matthewheaton/Desktop/screenshot/Screen Recording 2023-08-12 at 4.19.20 PM.mov" 
+output_gif = "/Users/matthewheaton/Documents/GSAPP_2022/GSAPP_summer_2023/slides/fm_newest.gif" 
 
 convert_mov_to_gif(input_mov, output_gif)

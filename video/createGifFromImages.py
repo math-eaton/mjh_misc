@@ -18,15 +18,17 @@ def create_gif(image_files, gif_path):
 
 # List of input directories
 image_folders = [
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area',
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point',
-    '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/polyline',
+    '/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test',
+    # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area',
+    # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point',
+    # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/polyline',
 ]
 
 # Base path for output GIFs
-output_base_path = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/'
+output_base_path = '/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test_gif'
 
 
+# batch process function - by default, this is not used
 def create_gif_batch(image_files, gif_path, batch_size=500):
     # Determine the number of batches
     num_batches = len(image_files) // batch_size
@@ -69,7 +71,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
 # Take the first 100 images for testing results
 # image_files = image_files[:250]
 
-for folder in image_folders:
+for folder in tqdm(image_folders, desc="Processing Folders"):
     # Get all PNG files in the current directory
     image_files = sorted([os.path.join(folder, img) for img in os.listdir(folder) if img.endswith(".png")])
 

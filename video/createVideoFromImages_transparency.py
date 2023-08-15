@@ -5,7 +5,7 @@ import subprocess
 import shutil
 import tempfile
 
-def create_video(image_files, video_path, frame_rate=12):
+def create_video(image_files, video_path, frame_rate=18):
     # Create a temporary directory to store individual frames
     temp_dir = tempfile.mkdtemp()
 
@@ -34,11 +34,11 @@ def create_video(image_files, video_path, frame_rate=12):
 
     print("done.")
 
-image_folder = '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point' 
+image_folder = '/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test' 
 image_files = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith(".png")])
 
-# Take the first 100 images for testing results
-image_files = image_files[:100]
+# Take the first n images for testing results
+image_files = image_files[:500]
 
-video_path = "/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/animations/point.mov"
+video_path = "/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test_vid/test.mp4"
 create_video(image_files, video_path)
