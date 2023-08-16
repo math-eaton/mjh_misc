@@ -12,13 +12,13 @@ def create_gif(image_files, gif_path):
     # images = [img.resize(size, Image.NEAREST) for img in images]
 
     # Save images as a GIF
-    images[0].save(gif_path, save_all=True, append_images=images[1:], optimize=True, duration=75, loop=0, disposal=2)
+    images[0].save(gif_path, save_all=True, append_images=images[1:], optimize=True, duration=90, loop=0, disposal=2)
 
     print("done.")
 
 # List of input directories
 image_folders = [
-    '/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test',
+    '/Users/matthewheaton/Documents/CIL_processed_sort',
     # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/area',
     # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/point',
     # '/Users/matthewheaton/Documents/GitHub/imagery_scraper/output/processed_imagery/polyline',
@@ -33,6 +33,7 @@ def create_gif_batch(image_files, gif_path, batch_size=500):
     # Determine the number of batches
     num_batches = len(image_files) // batch_size
     temp_gifs = []
+    
 
     for i in tqdm(range(num_batches + 1), desc="Processing batches"):
         # Create a batch of images
