@@ -16,15 +16,22 @@ def extract_features(image_path):
     _, des = orb.detectAndCompute(img, None)
     return des
 
-def compute_similarity(des1, des2):
+def compute_similarity(des1, des2, distance_threshold=30):  # threshold value is very important for proper sorting
     if des1 is None or des2 is None or len(des1) == 0 or len(des2) == 0:
         return float('inf')
 
     bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
     matches = bf.match(des1, des2)
     
-    # Using the sum of distances as the score
-    return sum([m.distance for m in matches])
+    # Filter matches based on the threshold
+    good_matches = [m for m in matches if m.distance < distance_threshold]
+    
+    # If there are no good matches, return a large distance
+    if not good_matches:
+        return float('inf')
+    
+    # Using the sum of distances of good matches as the score
+    return sum([m.distance for m in good_matches])
 
 ###############
 
@@ -37,7 +44,7 @@ def cache_features(image_folder, cache_path):
 
     # sort the input directory alphabetically - slice if truncating the input dir
     # images = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith('.png')])
-    images = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith('.png')])[:200]
+    images = sorted([os.path.join(image_folder, img) for img in os.listdir(image_folder) if img.endswith('.png')])[:100]
 
     
     # Compute and save missing features
@@ -112,4 +119,4 @@ if __name__ == "__main__":
     output_path = "/Users/matthewheaton/Documents/DOCENTS/lp1_design/assets/sorted_test"  
 
     # You can adjust num_iterations and window_size as needed
-    main(folder_path, output_path, num_iterations=6, window_size=50)
+    main(folder_path, output_path, num_iterations=3, window_size=10)
