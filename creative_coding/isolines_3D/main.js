@@ -43,6 +43,10 @@ function animate() {
 initThreeJS();
 animate();
 
+// Define a scaling factor for the Z values (elevation)
+const zScale = 0.0005; // Change this value to scale the elevation up or down
+
+
 function addContourLines(geojson) {
   let material = new THREE.LineBasicMaterial({ color: 0xff0000 });
 
@@ -74,7 +78,7 @@ function addContourLines(geojson) {
 
         try {
           const [x, y] = toStatePlane(lon, lat);
-          const z = contourValue * 0.01; // Adjust as needed for your elevation scale
+          const z = contourValue * zScale; // Use the zScale factor here
           vertices.push(x, y, z);
         } catch (error) {
           console.error(`Feature ${index}, Vertex ${coordIndex} error in toStatePlane:`, error.message);
@@ -204,7 +208,7 @@ function adjustCameraToBoundingBox(camera, controls, boundingBox) {
 // Set material for the contour lines
 const lineMaterial = new THREE.LineBasicMaterial({
   color: 0xff0000, // Bright red
-  linewidth: 2 // Make sure the lines are thick enough to be visible
+  linewidth: 4 // Make sure the lines are thick enough to be visible
 });
 
 // After loading the GeoJSON and creating the bounding box
