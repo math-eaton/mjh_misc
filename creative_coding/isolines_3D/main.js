@@ -46,71 +46,83 @@ animate();
 // Define a scaling factor for the Z values (elevation)
 const zScale = 0.0005; // Change this value to scale the elevation up or down
 
+// Function to get color based on elevation
+function getColorForElevation(elevation, minElevation, maxElevation) {
+  const gradient = [
+    { stop: 0, color: new THREE.Color(0x0000ff) }, // blue at the lowest
+    { stop: 0.5, color: new THREE.Color(0x00ff00) }, // green at the middle
+    { stop: 1, color: new THREE.Color(0xff0000) }  // red at the highest
+  ];
 
+  const t = (elevation - minElevation) / (maxElevation - minElevation);
+
+  let lowerStop = gradient[0], upperStop = gradient[gradient.length - 1];
+  for (let i = 0; i < gradient.length - 1; i++) {
+    if (t >= gradient[i].stop && t <= gradient[i + 1].stop) {
+      lowerStop = gradient[i];
+      upperStop = gradient[i + 1];
+      break;
+    }
+  }
+
+  const color = lowerStop.color.clone().lerp(upperStop.color, (t - lowerStop.stop) / (upperStop.stop - lowerStop.stop));
+  return color;
+}
+
+// Updated function to add contour lines with gradient colors
 function addContourLines(geojson) {
-  let material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+  // Determine min and max elevation from the geojson
+  const elevations = geojson.features.map(f => f.properties.Contour);
+  const minElevation = Math.min(...elevations);
+  const maxElevation = Math.max(...elevations);
 
   geojson.features.forEach((feature, index) => {
-    if (typeof feature.properties.Contour !== 'number') {
-      console.error(`Feature ${index} has no valid Contour property`, feature);
-      return;
-    }
+    const contour = feature.properties.Contour; // Elevation value
+    const coordinates = feature.geometry.coordinates; // Array of [lon, lat] pairs
 
-    let geometryType = feature.geometry.type;
-    let coordinates = feature.geometry.coordinates;
-    let contour = feature.properties.Contour;
+    const color = getColorForElevation(contour, minElevation, maxElevation);
+    let material = new THREE.LineBasicMaterial({ color: color });
 
     // Function to process a single line
     const processLine = (lineCoords, contourValue) => {
       let vertices = [];
-      lineCoords.forEach((pair, coordIndex) => {
+      lineCoords.forEach((pair) => {
         if (!Array.isArray(pair) || pair.length !== 2 || pair.some(c => isNaN(c))) {
-          console.error(`Feature ${index}, Vertex ${coordIndex} has NaN values`, pair);
+          console.error(`Feature ${index} has invalid coordinates`, pair);
           return;
         }
         const [lon, lat] = pair;
-
-        // Additional check for valid numbers
-        if (!Number.isFinite(lon) || !Number.isFinite(lat)) {
-          console.error(`Feature ${index}, Vertex ${coordIndex} has non-finite coordinates`, pair);
-          return;
-        }
-
         try {
           const [x, y] = toStatePlane(lon, lat);
-          const z = contourValue * zScale; // Use the zScale factor here
+          const z = contourValue * zScale; // Scale the elevation for visibility
           vertices.push(x, y, z);
         } catch (error) {
-          console.error(`Feature ${index}, Vertex ${coordIndex} error in toStatePlane:`, error.message);
+          console.error(`Feature ${index} error in toStatePlane:`, error.message);
         }
       });
-      return vertices;
-    };
 
-    // Check geometry type and process accordingly
-    if (geometryType === 'LineString') {
-      let vertices = processLine(coordinates, contour);
       if (vertices.length > 0) {
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
         const line = new THREE.Line(geometry, material);
         scene.add(line);
       }
-    } else if (geometryType === 'MultiLineString') {
+    };
+
+    // Check geometry type and process accordingly
+    if (feature.geometry.type === 'LineString') {
+      processLine(coordinates, contour);
+    } else if (feature.geometry.type === 'MultiLineString') {
       coordinates.forEach(lineCoords => {
-        let vertices = processLine(lineCoords, contour);
-        if (vertices.length > 0) {
-          const geometry = new THREE.BufferGeometry();
-          geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-          const line = new THREE.Line(geometry, material);
-          scene.add(line);
-        }
+        processLine(lineCoords, contour);
       });
     } else {
-      console.error(`Unsupported geometry type: ${geometryType}`);
+      console.error(`Unsupported geometry type: ${feature.geometry.type}`);
     }
   });
 }
+
+
 
 
 function getBoundingBoxOfGeoJSON(geojson) {
